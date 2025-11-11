@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Dungeons - Player{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 2rem;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-door-closed"></i> Dungeons</h2>
+        <a href="{% url 'player:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        {% for dungeon in dungeons %}
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="card-title mb-1">{{ dungeon.name }}</h5>
+                        <span class="badge {% if dungeon.status == 'active' %}bg-success{% elif dungeon.status == 'scheduled' %}bg-info{% else %}bg-secondary{% endif %}">
+                            {{ dungeon.get_status_display|default:dungeon.status|title }}
+                        </span>
+                    </div>
+                    <p class="text-muted mb-2">{{ dungeon.description|default:'No description'|truncatewords:20 }}</p>
+                    <div class="small text-muted mb-2">
+                        <i class="bi bi-calendar-event"></i>
+                        {% if dungeon.scheduled_date %} {{ dungeon.scheduled_date|date:"M d, Y H:i" }} {% else %} Not scheduled {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="small">
+                            <span class="badge bg-primary">+{{ dungeon.exp_reward }} EXP</span>
+                            <span class="text-muted ms-2">
+                                <i class="bi bi-people"></i> {{ dungeon.participants_count|default:0 }} attended
+                            </span>
+                        </div>
+                        <div>
+                            {% if dungeon.id in attended_ids %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> You attended</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-circle"></i> Not attended</span>
+                            {% endif %}
+                            <a href="{% url 'player:dungeon_detail' dungeon_pk=dungeon.id %}" class="btn btn-sm btn-outline-primary ms-2">
+                                Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Belum ada dungeon.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+

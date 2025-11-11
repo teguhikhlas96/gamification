@@ -51,6 +51,74 @@ def admin_dashboard(request):
 
 
 # Dungeon Views
+@login_required
+def player_dungeon_list(request):
+    """List dungeons untuk player dengan informasi lebih lengkap"""
+    if request.user.is_admin():
+        return redirect('admin_dashboard:dungeon_list')
+
+    # Semua dungeon dengan participants count, urutkan yang aktif dan terjadwal lebih dulu
+    dungeons = Dungeon.objects.annotate(
+        participants_count=Count('attendances', filter=Q(attendances__attended=True))
+    ).order_by(
+        F('status').desc(nulls_last=True), 'scheduled_date'
+    )
+
+    # Daftar dungeon yang dihadiri oleh user (untuk status attended)
+    attended_ids = list(
+        Attendance.objects.filter(user=request.user, attended=True).values_list('dungeon_id', flat=True)
+    )
+
+    context = {
+        'dungeons': dungeons,
+        'attended_ids': attended_ids,
+    }
+    return render(request, 'player/dungeon_list.html', context)
+
+
+@login_required
+def player_dungeon_detail(request, dungeon_pk: int):
+    """Detail dungeon untuk player"""
+    if request.user.is_admin():
+        return redirect('admin_dashboard:dungeon_list')
+
+    dungeon = get_object_or_404(Dungeon, pk=dungeon_pk)
+
+    attendance = Attendance.objects.filter(user=request.user, dungeon=dungeon).first()
+    participants_count = Attendance.objects.filter(dungeon=dungeon, attended=True).count()
+
+    context = {
+        'dungeon': dungeon,
+        'attendance': attendance,
+        'participants_count': participants_count,
+    }
+    return render(request, 'player/dungeon_detail.html', context)
+
+
+class PlayerListView(ListView):
+    """List view untuk semua players (Admin)"""
+    model = User
+    template_name = 'admin/player_list.html'
+    context_object_name = 'players'
+    paginate_by = 10
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_admin():
+            return redirect('accounts:login')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        """Tampilkan hanya users dengan role player, dengan pencarian opsional"""
+        queryset = User.objects.filter(role='player').order_by('-total_exp', '-current_level', 'username')
+        search = self.request.GET.get('q')
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search)
+            )
+        return queryset
+
+
 class DungeonListView(ListView):
     """List view untuk semua dungeons dengan query optimization"""
     model = Dungeon
@@ -142,66 +210,107 @@ def attendance_update(request, dungeon_pk):
     
     if request.method == 'POST':
         try:
+            bulk_action = request.POST.get('bulk')
             with transaction.atomic():
-                for attendance in attendances:
-                    old_attended = attendance.attended
-                    new_attended = request.POST.get(f'attended_{attendance.id}') == 'on'
-                    
-                    attendance.attended = new_attended
-                    
-                    # Jika attendance di-set menjadi True dan sebelumnya False, berikan EXP
-                    if new_attended and not old_attended:
-                        # Check honor privileges untuk join dungeon
-                        honor_privileges = check_honor_privileges(attendance.user)
-                        if not honor_privileges['can_join_dungeon']:
-                            messages.warning(
-                                request,
-                                f'{attendance.user.username} tidak dapat join dungeon karena honor points terlalu rendah. '
-                                f'Attendance tidak diberikan EXP.'
-                            )
-                            attendance.attended = False
+                if bulk_action in ('all', 'none'):
+                    # Bulk mark all attended or none
+                    mark_attended = bulk_action == 'all'
+                    updated = 0
+                    for attendance in attendances:
+                        old_attended = attendance.attended
+                        new_attended = mark_attended
+                        attendance.attended = new_attended
+
+                        if new_attended and not old_attended:
+                            honor_privileges = check_honor_privileges(attendance.user)
+                            if not honor_privileges['can_join_dungeon']:
+                                # skip give EXP but keep attended False
+                                attendance.attended = False
+                                attendance.save()
+                                continue
+                            attendance.participation_exp = dungeon.exp_reward
                             attendance.save()
-                            continue
-                        
-                        attendance.participation_exp = dungeon.exp_reward
-                        attendance.save()
-                        
-                        # Tambahkan EXP ke user
-                        add_exp(
-                            user=attendance.user,
-                            amount=dungeon.exp_reward,
-                            activity_type='participation',
-                            description=f"Attended dungeon: {dungeon.name}"
-                        )
-                    # Jika attendance di-set menjadi False dan sebelumnya True, kurangi EXP
-                    elif not new_attended and old_attended:
-                        # Kurangi EXP yang sudah diberikan
-                        attendance.participation_exp = 0
-                        attendance.save()
-                        
-                        # Kurangi EXP dari user (dengan menambahkan EXP negatif)
-                        add_exp(
-                            user=attendance.user,
-                            amount=-dungeon.exp_reward,
-                            activity_type='participation',
-                            description=f"Removed attendance for dungeon: {dungeon.name}"
-                        )
-                    else:
-                        attendance.save()
-                    
-                    # Check untuk absence punishment setelah update attendance
-                    if not new_attended:
-                        try:
-                            PunishmentService.check_and_apply_absence_punishment(
+                            add_exp(
                                 user=attendance.user,
-                                created_by=request.user
+                                amount=dungeon.exp_reward,
+                                activity_type='participation',
+                                description=f"Attended dungeon: {dungeon.name}"
                             )
-                        except Exception as e:
-                            # Log error but don't fail the attendance update
-                            import logging
-                            logger = logging.getLogger(__name__)
-                            logger.error(f'Error checking absence punishment: {str(e)}')
-            
+                            updated += 1
+                        elif not new_attended and old_attended:
+                            attendance.participation_exp = 0
+                            attendance.save()
+                            add_exp(
+                                user=attendance.user,
+                                amount=-dungeon.exp_reward,
+                                activity_type='participation',
+                                description=f"Removed attendance for dungeon: {dungeon.name}"
+                            )
+                            updated += 1
+                        else:
+                            attendance.save()
+
+                        if not new_attended:
+                            try:
+                                PunishmentService.check_and_apply_absence_punishment(
+                                    user=attendance.user,
+                                    created_by=request.user
+                                )
+                            except Exception:
+                                import logging
+                                logger = logging.getLogger(__name__)
+                                logger.error('Error checking absence punishment during bulk attendance update')
+                    if mark_attended:
+                        messages.success(request, f'Semua player ditandai hadir (kecuali yang tidak memenuhi honor). Diperbarui: {updated}')
+                    else:
+                        messages.success(request, f'Semua player ditandai tidak hadir. Diperbarui: {updated}')
+                    return redirect('admin_dashboard:attendance_update', dungeon_pk=dungeon.pk)
+                else:
+                    # Per-item update (existing behavior)
+                    for attendance in attendances:
+                        old_attended = attendance.attended
+                        new_attended = request.POST.get(f'attended_{attendance.id}') == 'on'
+                        attendance.attended = new_attended
+                        if new_attended and not old_attended:
+                            honor_privileges = check_honor_privileges(attendance.user)
+                            if not honor_privileges['can_join_dungeon']:
+                                messages.warning(
+                                    request,
+                                    f'{attendance.user.username} tidak dapat join dungeon karena honor points terlalu rendah. '
+                                    f'Attendance tidak diberikan EXP.'
+                                )
+                                attendance.attended = False
+                                attendance.save()
+                                continue
+                            attendance.participation_exp = dungeon.exp_reward
+                            attendance.save()
+                            add_exp(
+                                user=attendance.user,
+                                amount=dungeon.exp_reward,
+                                activity_type='participation',
+                                description=f"Attended dungeon: {dungeon.name}"
+                            )
+                        elif not new_attended and old_attended:
+                            attendance.participation_exp = 0
+                            attendance.save()
+                            add_exp(
+                                user=attendance.user,
+                                amount=-dungeon.exp_reward,
+                                activity_type='participation',
+                                description=f"Removed attendance for dungeon: {dungeon.name}"
+                            )
+                        else:
+                            attendance.save()
+                        if not new_attended:
+                            try:
+                                PunishmentService.check_and_apply_absence_punishment(
+                                    user=attendance.user,
+                                    created_by=request.user
+                                )
+                            except Exception as e:
+                                import logging
+                                logger = logging.getLogger(__name__)
+                                logger.error(f'Error checking absence punishment: {str(e)}')
             messages.success(request, f'Attendance untuk "{dungeon.name}" berhasil diupdate!')
             return redirect('admin_dashboard:dungeon_list')
         except Exception as e:

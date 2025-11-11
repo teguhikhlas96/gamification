@@ -5,6 +5,8 @@ app_name = 'admin_dashboard'
 
 urlpatterns = [
     path('admin-dashboard/', views.admin_dashboard, name='dashboard'),
+    # Player URLs (Admin)
+    path('players/', views.PlayerListView.as_view(), name='player_list'),
     # Dungeon URLs
     path('dungeons/', views.DungeonListView.as_view(), name='dungeon_list'),
     path('dungeons/create/', views.DungeonCreateView.as_view(), name='dungeon_create'),

@@ -47,8 +47,28 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link" href="{% url 'player:exp_history' %}">
+                                    <i class="bi bi-list-ul"></i> EXP History
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'player:sidequest_list' %}">
+                                    <i class="bi bi-list-task"></i> Sidequests
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'player:dungeon_list' %}">
+                                    <i class="bi bi-door-closed"></i> Dungeons
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'player:leaderboard' %}">
                                     <i class="bi bi-trophy"></i> Leaderboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'player:punishment_history' %}">
+                                    <i class="bi bi-exclamation-circle"></i> Punishments
                                 </a>
                             </li>
                         {% endif %}

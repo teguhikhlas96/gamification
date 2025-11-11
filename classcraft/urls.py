@@ -16,14 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # Redirect homepage to login page
+    path('', RedirectView.as_view(pattern_name='accounts:login', permanent=False)),
+
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('', include('core.urls')),  # Admin routes
     path('', include('gamification.urls')),  # Player routes
+    path('', include('core.urls')),  # Admin routes
 ]
 
 # Serve media files in development

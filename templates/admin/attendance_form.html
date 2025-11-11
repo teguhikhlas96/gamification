@@ -130,7 +130,25 @@
             <!-- Attendance Form -->
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-people"></i> Player Attendance</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-people"></i> Player Attendance</h5>
+                        <div class="d-flex gap-2">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="bulk" value="all">
+                                <button type="submit" class="btn btn-light btn-sm">
+                                    <i class="bi bi-people-fill"></i> Mark all attended
+                                </button>
+                            </form>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="bulk" value="none">
+                                <button type="submit" class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-people"></i> Mark none
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="post">

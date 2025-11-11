@@ -17,5 +17,8 @@ urlpatterns = [
     path('sidequests/', core_views.player_sidequest_list, name='sidequest_list'),
     path('sidequests/<int:sidequest_pk>/submit/', core_views.submit_sidequest, name='submit_sidequest'),
     path('submissions/<int:submission_pk>/', core_views.submission_status, name='submission_status'),
+    # Dungeon URLs (Player)
+    path('dungeons/', core_views.player_dungeon_list, name='dungeon_list'),
+    path('dungeons/<int:dungeon_pk>/', core_views.player_dungeon_detail, name='dungeon_detail'),
 ]
 

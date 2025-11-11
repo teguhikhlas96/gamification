@@ -38,8 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Channels
-    'channels',
     # Local apps
     'accounts',
     'core',
@@ -80,39 +78,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'classcraft.wsgi.application'
 ASGI_APPLICATION = 'classcraft.asgi.application'
 
-# Channels configuration
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
-}
-
-# Fallback to in-memory channel layer if Redis is not available
-# Uncomment this if Redis is not installed
-try:
-    import redis
-    REDIS_AVAILABLE = True
-except ImportError:
-    REDIS_AVAILABLE = False
-
-if not REDIS_AVAILABLE:
-    CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        },
-    }
-
 # Caching configuration
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache' if REDIS_AVAILABLE else 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1' if REDIS_AVAILABLE else 'unique-snowflake',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        } if REDIS_AVAILABLE else {},
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
         'KEY_PREFIX': 'classcraft',
         'TIMEOUT': 300,  # 5 minutes default timeout
     }

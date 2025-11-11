@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Players - Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 2rem;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people"></i> Players</h2>
+        <div>
+            <a href="{% url 'admin_dashboard:export_player_progress_csv' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-download"></i> Export Progress (CSV)
+            </a>
+        </div>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-8 col-md-6">
+            <input type="text" class="form-control" name="q" placeholder="Search username or email..." value="{{ request.GET.q }}">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-body">
+            {% if players %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Level</th>
+                            <th>Current EXP</th>
+                            <th>Total EXP</th>
+                            <th>Honor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in players %}
+                        <tr>
+                            <td><strong>{{ player.username }}</strong></td>
+                            <td>{{ player.email|default:"-" }}</td>
+                            <td>{{ player.current_level }}</td>
+                            <td>{{ player.current_exp }}</td>
+                            <td>{{ player.total_exp }}</td>
+                            <td>{{ player.honor_points }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle"></i> Tidak ada player ditemukan.
+            </div>
+            {% endif %}
+        </div>
+        {% if is_paginated %}
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+

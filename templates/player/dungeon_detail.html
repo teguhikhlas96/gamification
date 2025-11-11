@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Dungeon Detail - {{ dungeon.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 2rem;">
+    <a href="{% url 'player:dungeon_list' %}" class="btn btn-link mb-3">
+        <i class="bi bi-arrow-left"></i> Back to Dungeons
+    </a>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="bi bi-door-closed"></i> {{ dungeon.name }}</h3>
+            <span class="badge {% if dungeon.status == 'active' %}bg-success{% elif dungeon.status == 'scheduled' %}bg-info{% else %}bg-secondary{% endif %}">
+                {{ dungeon.get_status_display|default:dungeon.status|title }}
+            </span>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">{{ dungeon.description|default:"No description provided." }}</p>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-2"><strong>Scheduled:</strong>
+                        {% if dungeon.scheduled_date %} {{ dungeon.scheduled_date|date:"M d, Y H:i" }} {% else %} Not scheduled {% endif %}
+                    </div>
+                    <div class="mb-2"><strong>EXP Reward:</strong> <span class="badge bg-primary">+{{ dungeon.exp_reward }} EXP</span></div>
+                    <div class="mb-2"><strong>Participants (attended):</strong> {{ participants_count }}</div>
+                    <div class="mb-2">
+                        <strong>Your Attendance:</strong>
+                        {% if attendance and attendance.attended %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Attended</span>
+                        {% else %}
+                            <span class="badge bg-secondary"><i class="bi bi-circle"></i> Not attended</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
