@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
@@ -70,14 +71,16 @@ def player_dashboard(request):
     # Stats for charts
     # EXP growth (last 30 days)
     thirty_days_ago = timezone.now() - timedelta(days=30)
-    exp_growth_data = ExpLog.objects.filter(
-        user=user,
-        created_at__gte=thirty_days_ago
-    ).extra(
-        select={'day': "DATE(created_at)"}
-    ).values('day').annotate(
-        total_exp=Sum('exp_earned')
-    ).order_by('day')
+    exp_growth_data = (
+        ExpLog.objects.filter(
+            user=user,
+            created_at__gte=thirty_days_ago
+        )
+        .annotate(day=TruncDate('created_at'))
+        .values('day')
+        .annotate(total_exp=Sum('exp_earned'))
+        .order_by('day')
+    )
     
     # Format untuk Chart.js
     exp_growth_chart_data = []
