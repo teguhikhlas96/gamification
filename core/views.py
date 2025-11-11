@@ -447,21 +447,35 @@ def grade_submission(request, submission_pk):
         if form.is_valid():
             with transaction.atomic():
                 old_grade = submission.grade
+                old_exp_earned = submission.exp_earned or 0
                 submission = form.save()
-                
-                # Jika grade di-set dan sebelumnya belum ada, berikan EXP
-                if submission.grade is not None and old_grade is None:
-                    exp_reward = submission.get_exp_reward()
-                    submission.exp_earned = exp_reward
-                    submission.save()
-                    
-                    # Tambahkan EXP ke user
-                    add_exp(
-                        user=submission.user,
-                        amount=exp_reward,
-                        activity_type='assignment',
-                        description=f"Graded sidequest: {submission.sidequest.title} (Grade: {submission.grade})"
-                    )
+
+                if submission.grade is not None:
+                    # Hitung reward saat ini (late vs on-time)
+                    new_reward = submission.get_exp_reward()
+
+                    if old_grade is None and old_exp_earned == 0:
+                        # Baru pertama kali dinilai → berikan full EXP
+                        submission.exp_earned = new_reward
+                        submission.save()
+                        add_exp(
+                            user=submission.user,
+                            amount=new_reward,
+                            activity_type='assignment',
+                            description=f"Graded sidequest: {submission.sidequest.title} (Grade: {submission.grade})"
+                        )
+                    else:
+                        # Sudah pernah dinilai → sesuaikan delta jika reward berubah (misal aturan atau due date berubah)
+                        delta = new_reward - old_exp_earned
+                        if delta != 0:
+                            submission.exp_earned = new_reward
+                            submission.save()
+                            add_exp(
+                                user=submission.user,
+                                amount=delta,
+                                activity_type='assignment',
+                                description=f"Adjusted grade reward: {submission.sidequest.title} (Grade: {submission.grade})"
+                            )
                 
                 messages.success(request, f'Submission dari {submission.user.username} berhasil dinilai!')
                 return redirect('admin_dashboard:sidequest_submissions', sidequest_pk=submission.sidequest.pk)
