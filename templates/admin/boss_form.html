@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Edit{% else %}Create{% endif %} Boss Battle - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        min-height: calc(100vh - 56px);
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+        color: #495057;
+        padding: 0.75rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem 0;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .sidebar .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+    .score-preview {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="margin-top: -1.5rem;">
+    <div class="row g-0">
+        <!-- Sidebar Navigation -->
+        <nav class="col-md-3 col-lg-2 sidebar">
+            <div class="position-sticky pt-3">
+                <div class="mb-4">
+                    <h5 class="text-center">
+                        <i class="bi bi-speedometer2"></i> Admin Panel
+                    </h5>
+                    <hr>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'admin_dashboard:boss_list' %}">
+                            <i class="bi bi-shield-exclamation"></i> Bosses
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 main-content" style="margin-top: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-{% if object %}pencil{% else %}plus-circle{% endif %}"></i> 
+                    {% if object %}Edit{% else %}Create{% endif %} Boss Battle
+                </h2>
+                <a href="{% url 'admin_dashboard:boss_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Boss Battle Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="bossForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.type.id_for_label }}" class="form-label">Boss Type</label>
+                                {{ form.type }}
+                                {% if form.type.errors %}
+                                    <div class="text-danger small">{{ form.type.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.user.id_for_label }}" class="form-label">Player</label>
+                                {{ form.user }}
+                                {% if form.user.errors %}
+                                    <div class="text-danger small">{{ form.user.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Boss Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.base_score.id_for_label }}" class="form-label">Base Score</label>
+                                {{ form.base_score }}
+                                {% if form.base_score.errors %}
+                                    <div class="text-danger small">{{ form.base_score.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Nilai asli (0-100)</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.battle_date.id_for_label }}" class="form-label">Battle Date</label>
+                                {{ form.battle_date }}
+                                {% if form.battle_date.errors %}
+                                    <div class="text-danger small">{{ form.battle_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Score Preview (akan di-update via JavaScript) -->
+                        <div class="score-preview" id="scorePreview" style="display: none;">
+                            <h6>Score Calculation Preview:</h6>
+                            <p class="mb-1"><strong>Base Score:</strong> <span id="previewBase">-</span></p>
+                            <p class="mb-1"><strong>Player Level:</strong> <span id="previewLevel">-</span></p>
+                            <p class="mb-1"><strong>Bonus Applied:</strong> <span id="previewBonus">-</span></p>
+                            <p class="mb-0"><strong>Final Score:</strong> <span id="previewFinal" class="badge bg-primary fs-6">-</span></p>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>Bonus Rules:</strong><br>
+                            • Level 1-5: No bonus<br>
+                            • Level 6-10: +5 points<br>
+                            • Level 11-15: +10 points<br>
+                            • Level 16+: +15 points
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'admin_dashboard:boss_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> {% if object %}Update{% else %}Create{% endif %} Boss Battle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// Auto-calculate score preview
+document.addEventListener('DOMContentLoaded', function() {
+    const userSelect = document.getElementById('{{ form.user.id_for_label }}');
+    const baseScoreInput = document.getElementById('{{ form.base_score.id_for_label }}');
+    const scorePreview = document.getElementById('scorePreview');
+    
+    function updateScorePreview() {
+        const userId = userSelect.value;
+        const baseScore = parseInt(baseScoreInput.value) || 0;
+        
+        if (userId && baseScore >= 0) {
+            // Get player level (would need AJAX call in real implementation)
+            // For now, we'll show a placeholder
+            scorePreview.style.display = 'block';
+            document.getElementById('previewBase').textContent = baseScore;
+            // Note: In real implementation, you'd fetch player level via AJAX
+        } else {
+            scorePreview.style.display = 'none';
+        }
+    }
+    
+    userSelect.addEventListener('change', updateScorePreview);
+    baseScoreInput.addEventListener('input', updateScorePreview);
+});
+</script>
+{% endblock %}
+

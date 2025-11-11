@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics Dashboard - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1 class="display-5">
+                <i class="bi bi-graph-up"></i> Analytics Dashboard
+            </h1>
+            <div>
+                <a href="{% url 'admin_dashboard:export_player_progress_csv' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Export Player Progress (CSV)
+                </a>
+                <a href="{% url 'admin_dashboard:export_grades_pdf' %}" class="btn btn-outline-info" target="_blank">
+                    <i class="bi bi-file-pdf"></i> Export Grades (PDF)
+                </a>
+                <a href="{% url 'admin_dashboard:export_analytics_excel' %}" class="btn btn-outline-success">
+                    <i class="bi bi-file-excel"></i> Export Analytics (Excel)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Engagement Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card shadow-sm border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ total_players }}</h3>
+                    <p class="text-muted mb-0">Total Players</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card shadow-sm border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-activity text-success" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ active_players_week }}</h3>
+                    <p class="text-muted mb-0">Active Players (Last 7 Days)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card shadow-sm border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-month text-info" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ active_players_month }}</h3>
+                    <p class="text-muted mb-0">Active Players (Last 30 Days)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> EXP Growth (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="expGrowthChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> EXP Distribution by Level</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="expDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity & Punishment Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Activity Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Punishment Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="punishmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievement & Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Achievement Completion Rates</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <h4 class="text-primary">{{ level_5_plus }}</h4>
+                            <p class="text-muted mb-0">Level 5+</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <h4 class="text-success">{{ level_10_plus }}</h4>
+                            <p class="text-muted mb-0">Level 10+</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <h4 class="text-warning">{{ high_honor }}</h4>
+                            <p class="text-muted mb-0">High Honor (800+)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> System Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <strong>Dungeons:</strong> {{ total_dungeons }} ({{ active_dungeons }} active)
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <strong>Sidequests:</strong> {{ total_sidequests }} ({{ active_sidequests }} active)
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <strong>Submissions:</strong> {{ total_submissions }} ({{ graded_submissions }} graded)
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <strong>Punishments:</strong> {{ total_punishments }} ({{ active_punishments }} active)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Players -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-trophy-fill"></i> Top 10 Players</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Username</th>
+                                    <th>Level</th>
+                                    <th>Total EXP</th>
+                                    <th>Honor Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in top_players %}
+                                    <tr>
+                                        <td><span class="badge bg-{{ forloop.counter|yesno:'warning,secondary,secondary' }}">#{{ forloop.counter }}</span></td>
+                                        <td><strong>{{ player.username }}</strong></td>
+                                        <td><span class="badge bg-info">Level {{ player.current_level }}</span></td>
+                                        <td><strong>{{ player.total_exp }}</strong></td>
+                                        <td>{{ player.honor_points }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+{{ exp_growth_data|json_script:"exp-growth-data" }}
+{{ exp_distribution|json_script:"exp-distribution-data" }}
+{{ activity_stats|json_script:"activity-stats-data" }}
+{{ punishment_by_type|json_script:"punishment-type-data" }}
+
+<script>
+    // EXP Growth Chart
+    const expGrowthCtx = document.getElementById('expGrowthChart').getContext('2d');
+    const expGrowthDataRaw = JSON.parse(document.getElementById('exp-growth-data').textContent);
+    const expGrowthData = Array.isArray(expGrowthDataRaw) ? expGrowthDataRaw : [];
+    
+    const expGrowthChart = new Chart(expGrowthCtx, {
+        type: 'line',
+        data: {
+            labels: expGrowthData.length > 0 ? expGrowthData.map(item => item.day) : [],
+            datasets: [{
+                label: 'Total EXP Earned',
+                data: expGrowthData.length > 0 ? expGrowthData.map(item => item.total_exp || 0) : [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // EXP Distribution Chart
+    const expDistCtx = document.getElementById('expDistributionChart').getContext('2d');
+    const expDistDataRaw = JSON.parse(document.getElementById('exp-distribution-data').textContent);
+    const expDistData = Array.isArray(expDistDataRaw) ? expDistDataRaw : [];
+    
+    const expDistributionChart = new Chart(expDistCtx, {
+        type: 'bar',
+        data: {
+            labels: expDistData.length > 0 ? expDistData.map(item => 'Level ' + item.current_level) : [],
+            datasets: [{
+                label: 'Player Count',
+                data: expDistData.length > 0 ? expDistData.map(item => item.count) : [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    const activityDataRaw = JSON.parse(document.getElementById('activity-stats-data').textContent);
+    const activityData = Array.isArray(activityDataRaw) ? activityDataRaw : [];
+    
+    const activityTypes = {
+        'quest': 'Quest',
+        'assignment': 'Assignment',
+        'participation': 'Participation',
+        'bonus': 'Bonus',
+        'admin': 'Admin Grant',
+        'other': 'Other'
+    };
+    
+    const activityChart = new Chart(activityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: activityData.length > 0 ? activityData.map(item => activityTypes[item.activity_type] || item.activity_type) : [],
+            datasets: [{
+                data: activityData.length > 0 ? activityData.map(item => item.total || 0) : [],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+
+    // Punishment Chart
+    const punishmentCtx = document.getElementById('punishmentChart').getContext('2d');
+    const punishmentDataRaw = JSON.parse(document.getElementById('punishment-type-data').textContent);
+    const punishmentData = Array.isArray(punishmentDataRaw) ? punishmentDataRaw : [];
+    
+    const punishmentChart = new Chart(punishmentCtx, {
+        type: 'bar',
+        data: {
+            labels: punishmentData.length > 0 ? punishmentData.map(item => item.type) : [],
+            datasets: [{
+                label: 'Count',
+                data: punishmentData.length > 0 ? punishmentData.map(item => item.count) : [],
+                backgroundColor: 'rgba(255, 99, 132, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+

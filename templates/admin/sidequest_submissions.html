@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Submissions - {{ sidequest.title }} - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="margin-top: -1.5rem;">
+    <div class="row g-0">
+        <nav class="col-md-3 col-lg-2 sidebar" style="min-height: calc(100vh - 56px); background-color: #f8f9fa; border-right: 1px solid #dee2e6;">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard:sidequest_list' %}"><i class="bi bi-arrow-left"></i> Back</a></li>
+                </ul>
+            </div>
+        </nav>
+        <main class="col-md-9 ms-sm-auto col-lg-10" style="padding: 1.5rem; margin-top: 1.5rem;">
+            <h2>Submissions: {{ sidequest.title }}</h2>
+            <div class="card">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr><th>User</th><th>Submitted</th><th>Grade</th><th>EXP</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                            <tr>
+                                <td>{{ submission.user.username }}</td>
+                                <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+                                <td>{% if submission.grade %}{{ submission.grade }}{% else %}-{% endif %}</td>
+                                <td>{{ submission.exp_earned }} EXP</td>
+                                <td><a href="{% url 'admin_dashboard:grade_submission' submission.pk %}" class="btn btn-sm btn-primary">Grade</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit: {{ sidequest.title }} - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header"><h5>Submit: {{ sidequest.title }}</h5></div>
+        <div class="card-body">
+            <p><strong>Description:</strong> {{ sidequest.description }}</p>
+            <p><strong>Instructions:</strong> {{ sidequest.instructions }}</p>
+            <p><strong>Due Date:</strong> {{ sidequest.due_date|date:"M d, Y H:i" }}</p>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Player Dashboard - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .level-badge {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">
+                <i class="bi bi-person-circle"></i> Welcome, {{ user.username }}!
+            </h1>
+            <p class="text-muted">Level {{ user.current_level }} Player</p>
+        </div>
+    </div>
+
+    <!-- Level Progress Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                            <div class="level-badge text-primary">
+                                <i class="bi bi-trophy-fill"></i> Level {{ user.current_level }}
+                            </div>
+                            <div class="mt-2">
+                                <span class="badge bg-info">{{ user.total_exp }} Total EXP</span>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h5 class="card-title">Progress to Next Level</h5>
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                     role="progressbar" 
+                                     style="width: {{ exp_progress }}%"
+                                     id="exp-progress-bar">
+                                    <strong>{{ exp_progress|floatformat:1 }}%</strong>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <span id="current-exp">{{ user.current_exp }}</span> / 
+                                    <span id="exp-needed">{{ exp_needed }}</span> EXP needed for Level {{ user.current_level|add:1 }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card shadow-sm border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-star-fill text-warning" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="total-exp-earned">{{ total_exp_earned }}</h3>
+                    <p class="text-muted mb-0">Total EXP Earned</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card shadow-sm border-danger">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ total_exp_lost }}</h3>
+                    <p class="text-muted mb-0">Total EXP Lost</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card shadow-sm border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-shield-check text-info" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="honor-points">{{ user.honor_points }}</h3>
+                    <p class="text-muted mb-0">
+                        Honor Points 
+                        <span class="badge bg-secondary" id="honor-tier">{{ honor_privileges.honor_tier|title }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card shadow-sm border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-activity text-success" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2">{{ recent_activities|length }}</h3>
+                    <p class="text-muted mb-0">Recent Activities</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> EXP Growth (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="expGrowthChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Activity Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Effects & Punishments -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Active Status Effects
+                        {% if active_status_effects %}
+                            <span class="badge bg-danger notification-badge">{{ active_status_effects|length }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if active_status_effects %}
+                        {% for effect in active_status_effects %}
+                            <div class="alert alert-warning mb-2">
+                                <strong>{{ effect.get_effect_type_display }}</strong>
+                                <br>
+                                <small>{{ effect.description }}</small>
+                                <br>
+                                <small class="text-muted">
+                                    EXP Multiplier: {{ effect.exp_multiplier }}x
+                                    {% if effect.end_date %}
+                                        | Expires: {{ effect.end_date|date:"M d, Y" }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No active status effects. You're in good shape! 🎉</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-ban"></i> Active Punishments
+                        {% if active_punishments %}
+                            <span class="badge bg-dark notification-badge">{{ active_punishments|length }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if active_punishments %}
+                        {% for punishment in active_punishments %}
+                            <div class="alert alert-danger mb-2">
+                                <strong>{{ punishment.get_type_display }} - {{ punishment.get_severity_display }}</strong>
+                                <br>
+                                <small>{{ punishment.description }}</small>
+                                <br>
+                                <small class="text-muted">
+                                    EXP Penalty: -{{ punishment.exp_penalty }}
+                                    {% if punishment.status_effect %}
+                                        | Status: {{ punishment.get_status_effect_display }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No active punishments. Keep up the good work! 👍</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities & Quick Links -->
+    <div class="row">
+        <div class="col-md-8 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activities</h5>
+                </div>
+                <div class="card-body">
+                    <div id="recent-activities-list">
+                        {% for activity in recent_activities %}
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                <div>
+                                    <strong class="text-{{ activity.exp_earned|yesno:'success,danger' }}">
+                                        {% if activity.exp_earned > 0 %}+{% endif %}{{ activity.exp_earned }} EXP
+                                    </strong>
+                                    <br>
+                                    <small class="text-muted">{{ activity.get_activity_type_display }}: {{ activity.description|truncatewords:10 }}</small>
+                                </div>
+                                <small class="text-muted">{{ activity.created_at|timesince }} ago</small>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted mb-0">No activities yet. Start playing to earn EXP!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'player:profile' %}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="bi bi-person"></i> My Profile
+                    </a>
+                    <a href="{% url 'player:exp_history' %}" class="btn btn-outline-info w-100 mb-2">
+                        <i class="bi bi-list-ul"></i> EXP History
+                    </a>
+                    <a href="{% url 'player:sidequest_list' %}" class="btn btn-outline-success w-100 mb-2">
+                        <i class="bi bi-list-task"></i> Sidequests
+                    </a>
+                    <a href="{% url 'player:leaderboard' %}" class="btn btn-outline-warning w-100 mb-2">
+                        <i class="bi bi-trophy"></i> Leaderboard
+                    </a>
+                    <a href="{% url 'player:punishment_history' %}" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-exclamation-circle"></i> Punishment History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Level Up Modal -->
+<div class="modal fade" id="levelUpModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-trophy-fill"></i> Level Up!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h2 class="text-success">🎉 Congratulations! 🎉</h2>
+                <p class="lead" id="level-up-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Awesome!</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+{{ exp_growth_data|json_script:"exp-growth-data" }}
+{{ activity_distribution|json_script:"activity-distribution-data" }}
+
+<script>
+    // EXP Growth Chart
+    const expGrowthCtx = document.getElementById('expGrowthChart').getContext('2d');
+    const expGrowthDataRaw = JSON.parse(document.getElementById('exp-growth-data').textContent);
+    const expGrowthData = Array.isArray(expGrowthDataRaw) ? expGrowthDataRaw : [];
+    
+    const expGrowthChart = new Chart(expGrowthCtx, {
+        type: 'line',
+        data: {
+            labels: expGrowthData.length > 0 ? expGrowthData.map(item => item.day) : [],
+            datasets: [{
+                label: 'EXP Earned',
+                data: expGrowthData.length > 0 ? expGrowthData.map(item => item.total_exp || 0) : [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Activity Distribution Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    const activityDataRaw = JSON.parse(document.getElementById('activity-distribution-data').textContent);
+    const activityData = Array.isArray(activityDataRaw) ? activityDataRaw : [];
+    
+    const activityTypes = {
+        'quest': 'Quest',
+        'assignment': 'Assignment',
+        'participation': 'Participation',
+        'bonus': 'Bonus',
+        'admin': 'Admin Grant',
+        'other': 'Other'
+    };
+    
+    const activityChart = new Chart(activityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: activityData.length > 0 ? activityData.map(item => activityTypes[item.activity_type] || item.activity_type) : [],
+            datasets: [{
+                data: activityData.length > 0 ? activityData.map(item => item.count) : [],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+
+    // Real-time updates dengan AJAX
+    function updateStats() {
+        fetch('{% url "player:ajax_stats" %}')
+            .then(response => response.json())
+            .then(data => {
+                // Update EXP progress
+                document.getElementById('current-exp').textContent = data.current_exp;
+                document.getElementById('exp-needed').textContent = data.exp_needed;
+                document.getElementById('exp-progress-bar').style.width = data.exp_progress + '%';
+                document.getElementById('exp-progress-bar').innerHTML = '<strong>' + data.exp_progress.toFixed(1) + '%</strong>';
+                
+                // Update honor points
+                document.getElementById('honor-points').textContent = data.honor_points;
+                document.getElementById('honor-tier').textContent = data.honor_tier.charAt(0).toUpperCase() + data.honor_tier.slice(1);
+                
+                // Check for level up
+                if (data.level_up) {
+                    document.getElementById('level-up-message').textContent = data.level_up.message;
+                    const levelUpModal = new bootstrap.Modal(document.getElementById('levelUpModal'));
+                    levelUpModal.show();
+                }
+            })
+            .catch(error => console.error('Error updating stats:', error));
+    }
+
+    function updateRecentActivities() {
+        fetch('{% url "player:ajax_activities" %}')
+            .then(response => response.json())
+            .then(data => {
+                const activitiesList = document.getElementById('recent-activities-list');
+                activitiesList.innerHTML = '';
+                
+                if (data.activities.length === 0) {
+                    activitiesList.innerHTML = '<p class="text-muted mb-0">No activities yet.</p>';
+                    return;
+                }
+                
+                data.activities.forEach(activity => {
+                    const div = document.createElement('div');
+                    div.className = 'd-flex justify-content-between align-items-center border-bottom pb-2 mb-2';
+                    div.innerHTML = `
+                        <div>
+                            <strong class="text-${activity.exp_earned > 0 ? 'success' : 'danger'}">
+                                ${activity.exp_earned > 0 ? '+' : ''}${activity.exp_earned} EXP
+                            </strong>
+                            <br>
+                            <small class="text-muted">${activity.activity_type}: ${activity.description}</small>
+                        </div>
+                        <small class="text-muted">${activity.created_at}</small>
+                    `;
+                    activitiesList.appendChild(div);
+                });
+            })
+            .catch(error => console.error('Error updating activities:', error));
+    }
+
+    // Update setiap 5 detik
+    setInterval(updateStats, 5000);
+    setInterval(updateRecentActivities, 10000);
+    
+    // Initial update
+    updateStats();
+    updateRecentActivities();
+</script>
+{% endblock %}
+

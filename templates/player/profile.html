@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5">
+                <i class="bi bi-person-circle"></i> My Profile
+            </h1>
+        </div>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 5rem; color: #0d6efd;"></i>
+                    </div>
+                    <h3>{{ user.username }}</h3>
+                    <p class="text-muted">{{ user.email|default:"No email" }}</p>
+                    <div class="mt-3">
+                        <span class="badge bg-primary fs-6">Level {{ user.current_level }}</span>
+                        <span class="badge bg-info fs-6">{{ honor_privileges.honor_tier|title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <strong>Total EXP</strong>
+                                </div>
+                                <h4 class="mb-0">{{ user.total_exp }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="bi bi-shield-check text-info"></i>
+                                    <strong>Honor Points</strong>
+                                </div>
+                                <h4 class="mb-0">{{ user.honor_points }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="bi bi-door-open text-success"></i>
+                                    <strong>Dungeons Attended</strong>
+                                </div>
+                                <h4 class="mb-0">{{ total_dungeons_attended }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="bi bi-list-task text-primary"></i>
+                                    <strong>Sidequests Submitted</strong>
+                                </div>
+                                <h4 class="mb-0">{{ total_sidequests_submitted }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    <strong>Sidequests Graded</strong>
+                                </div>
+                                <h4 class="mb-0">{{ total_sidequests_graded }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <div>
+                                    <i class="bi bi-sword text-danger"></i>
+                                    <strong>Boss Battles</strong>
+                                </div>
+                                <h4 class="mb-0">{{ total_boss_battles }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-trophy-fill"></i> Achievements
+                        <span class="badge bg-dark">{{ achievements|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if achievements %}
+                        <div class="row">
+                            {% for achievement in achievements %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-warning">
+                                        <div class="card-body text-center">
+                                            <div style="font-size: 3rem;">{{ achievement.icon }}</div>
+                                            <h5 class="mt-2">{{ achievement.name }}</h5>
+                                            <p class="text-muted mb-0">{{ achievement.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No achievements yet. Keep playing to unlock achievements!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Honor Privileges -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-check"></i> Honor Privileges</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Current Tier: <span class="badge bg-secondary">{{ honor_privileges.honor_tier|title }}</span></h6>
+                            <p class="text-muted">Honor Points: {{ honor_privileges.honor_points }}</p>
+                            <p class="text-muted">EXP Multiplier: {{ honor_privileges.exp_multiplier_bonus }}x</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Privileges:</h6>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <i class="bi bi-{{ honor_privileges.can_submit_sidequest|yesno:'check-circle-fill text-success,x-circle-fill text-danger' }}"></i>
+                                    Can Submit Sidequests
+                                </li>
+                                <li>
+                                    <i class="bi bi-{{ honor_privileges.can_join_dungeon|yesno:'check-circle-fill text-success,x-circle-fill text-danger' }}"></i>
+                                    Can Join Dungeons
+                                </li>
+                                <li>
+                                    <i class="bi bi-{{ honor_privileges.can_participate_boss|yesno:'check-circle-fill text-success,x-circle-fill text-danger' }}"></i>
+                                    Can Participate in Boss Battles
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Punishments Summary -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-circle"></i> Punishments Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Total Punishments:</strong> {{ total_punishments }}</p>
+                            <p><strong>Resolved:</strong> {{ resolved_punishments }}</p>
+                            <p><strong>Active:</strong> {{ total_punishments|add:"-"|add:resolved_punishments }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if resolved_punishments > 0 and total_punishments == resolved_punishments %}
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle-fill"></i> All punishments have been resolved!
+                                </div>
+                            {% elif total_punishments > 0 %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> You have active punishments. Check your punishment history for details.
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No punishments recorded.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{% url 'player:punishment_history' %}" class="btn btn-outline-danger">
+                        <i class="bi bi-list-ul"></i> View Full History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

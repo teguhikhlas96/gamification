@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Sidequests - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2><i class="bi bi-list-task"></i> Sidequests</h2>
+    <div class="row">
+        {% for sidequest in sidequests %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ sidequest.title }}</h5>
+                    {% if sidequest.is_overdue %}<span class="badge bg-danger">Overdue</span>{% endif %}
+                </div>
+                <div class="card-body">
+                    <p>{{ sidequest.description|truncatewords:20 }}</p>
+                    <p><strong>Due Date:</strong> {{ sidequest.due_date|date:"M d, Y H:i" }}</p>
+                    <p><strong>EXP Reward:</strong> {{ sidequest.exp_reward }} EXP (Late: {{ sidequest.late_exp_reward }} EXP)</p>
+                    {% if sidequest.pk in user_submissions %}
+                        {% for key, sub in user_submissions.items %}
+                            {% if key == sidequest.pk %}
+                                <a href="{% url 'player:submission_status' sub.pk %}" class="btn btn-info">View Status</a>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <a href="{% url 'player:submit_sidequest' sidequest.pk %}" class="btn btn-primary">Submit</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

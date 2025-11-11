@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Resolve Punishment - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-check-circle"></i> Resolve Punishment</h5>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to resolve this punishment?</p>
+                    <div class="alert alert-info">
+                        <strong>Player:</strong> {{ punishment.user.username }}<br>
+                        <strong>Type:</strong> {{ punishment.get_type_display }}<br>
+                        <strong>Severity:</strong> {{ punishment.get_severity_display }}<br>
+                        <strong>Description:</strong> {{ punishment.description }}
+                    </div>
+                    <p>
+                        <i class="bi bi-info-circle"></i> Resolving punishment will:
+                        <ul>
+                            <li>Mark punishment as resolved</li>
+                            <li>Deactivate related status effects</li>
+                        </ul>
+                    </p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'admin_dashboard:punishment_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Resolve Punishment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

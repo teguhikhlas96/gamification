@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Attendance - {{ dungeon.name }} - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        min-height: calc(100vh - 56px);
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+        color: #495057;
+        padding: 0.75rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem 0;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .sidebar .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="margin-top: -1.5rem;">
+    <div class="row g-0">
+        <!-- Sidebar Navigation -->
+        <nav class="col-md-3 col-lg-2 sidebar">
+            <div class="position-sticky pt-3">
+                <div class="mb-4">
+                    <h5 class="text-center">
+                        <i class="bi bi-speedometer2"></i> Admin Panel
+                    </h5>
+                    <hr>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-people"></i> Players
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'admin_dashboard:dungeon_list' %}">
+                            <i class="bi bi-door-closed"></i> Dungeons
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-list-task"></i> Sidequests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-shield-exclamation"></i> Bosses
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-trophy"></i> Achievements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-exclamation-triangle"></i> Punishments
+                        </a>
+                    </li>
+                    <li class="nav-item mt-3">
+                        <a class="nav-link" href="/admin/">
+                            <i class="bi bi-gear"></i> Django Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 main-content" style="margin-top: 1.5rem;">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-check-circle"></i> Manage Attendance</h2>
+                    <p class="text-muted mb-0">{{ dungeon.name }}</p>
+                </div>
+                <a href="{% url 'admin_dashboard:dungeon_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            <!-- Dungeon Info Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Dungeon Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ dungeon.name }}</p>
+                            <p><strong>Description:</strong> {{ dungeon.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Scheduled Date:</strong> {{ dungeon.scheduled_date|date:"M d, Y H:i" }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if dungeon.status == 'planned' %}
+                                    <span class="badge bg-secondary">Planned</span>
+                                {% elif dungeon.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif dungeon.status == 'completed' %}
+                                    <span class="badge bg-dark">Completed</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>EXP Reward:</strong> <span class="badge bg-info">{{ dungeon.exp_reward }} EXP</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Form -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Player Attendance</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th>Player</th>
+                                        <th>Level</th>
+                                        <th>Current EXP</th>
+                                        <th width="15%" class="text-center">Attended</th>
+                                        <th>EXP Earned</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendance in attendances %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>
+                                            <strong>{{ attendance.user.username }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ attendance.user.email }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">Level {{ attendance.user.current_level }}</span>
+                                        </td>
+                                        <td>{{ attendance.user.current_exp }} / {{ attendance.user.total_exp }}</td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="attended_{{ attendance.id }}" 
+                                                       id="attended_{{ attendance.id }}"
+                                                       {% if attendance.attended %}checked{% endif %}>
+                                                <label class="form-check-label" for="attended_{{ attendance.id }}">
+                                                    {% if attendance.attended %}
+                                                        <span class="badge bg-success">Yes</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">No</span>
+                                                    {% endif %}
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if attendance.attended %}
+                                                <span class="text-success fw-bold">+{{ attendance.participation_exp }} EXP</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            <div class="alert alert-info">
+                                                <i class="bi bi-info-circle"></i> No players found.
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <strong>Note:</strong> Checking/unchecking attendance will automatically add/remove EXP for players.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'admin_dashboard:dungeon_list' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Save Attendance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+

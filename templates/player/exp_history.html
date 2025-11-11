@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}EXP History - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5">
+                <i class="bi bi-list-ul"></i> EXP History
+            </h1>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="activity_type" class="form-label">Filter by Activity Type</label>
+                            <select name="activity_type" id="activity_type" class="form-select">
+                                <option value="">All Activities</option>
+                                {% for type_code, type_name in activity_types %}
+                                    <option value="{{ type_code }}" {% if selected_activity_type == type_code %}selected{% endif %}>
+                                        {{ type_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel"></i> Filter
+                            </button>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <a href="{% url 'player:exp_history' %}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXP Logs Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> EXP Logs</h5>
+                </div>
+                <div class="card-body">
+                    {% if exp_logs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Activity Type</th>
+                                        <th>EXP Earned</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in exp_logs %}
+                                        <tr>
+                                            <td>{{ log.created_at|date:"M d, Y H:i" }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ log.activity_type|yesno:'primary,success,info,warning,danger,secondary' }}">
+                                                    {{ log.get_activity_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong class="text-{{ log.exp_earned|yesno:'success,danger' }}">
+                                                    {% if log.exp_earned > 0 %}+{% endif %}{{ log.exp_earned }}
+                                                </strong>
+                                            </td>
+                                            <td>{{ log.description|truncatewords:15 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if exp_logs.has_other_pages %}
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    {% if exp_logs.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ exp_logs.previous_page_number }}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Page {{ exp_logs.number }} of {{ exp_logs.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if exp_logs.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ exp_logs.next_page_number }}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}">Next</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ exp_logs.paginator.num_pages }}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}">Last</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">No EXP logs found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

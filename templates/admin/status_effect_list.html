@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Status Effects - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        min-height: calc(100vh - 56px);
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+        color: #495057;
+        padding: 0.75rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem 0;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .sidebar .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="margin-top: -1.5rem;">
+    <div class="row g-0">
+        <nav class="col-md-3 col-lg-2 sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:punishment_list' %}">
+                            <i class="bi bi-arrow-left"></i> Back to Punishments
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        <main class="col-md-9 ms-sm-auto col-lg-10 main-content" style="margin-top: 1.5rem;">
+            <h2><i class="bi bi-shield-slash"></i> Status Effects</h2>
+            <div class="card">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Effect Type</th>
+                                <th>EXP Multiplier</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for effect in status_effects %}
+                            <tr>
+                                <td>{{ effect.user.username }}</td>
+                                <td><span class="badge bg-warning">{{ effect.get_effect_type_display }}</span></td>
+                                <td>{{ effect.exp_multiplier }}x</td>
+                                <td>{{ effect.start_date|date:"M d, Y H:i" }}</td>
+                                <td>{% if effect.end_date %}{{ effect.end_date|date:"M d, Y H:i" }}{% else %}Permanent{% endif %}</td>
+                                <td>
+                                    {% if effect.is_active %}
+                                        <span class="badge bg-danger">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+

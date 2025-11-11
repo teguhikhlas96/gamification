@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Edit{% else %}Create{% endif %} Punishment - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        min-height: calc(100vh - 56px);
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+        color: #495057;
+        padding: 0.75rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem 0;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .sidebar .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="margin-top: -1.5rem;">
+    <div class="row g-0">
+        <!-- Sidebar Navigation -->
+        <nav class="col-md-3 col-lg-2 sidebar">
+            <div class="position-sticky pt-3">
+                <div class="mb-4">
+                    <h5 class="text-center">
+                        <i class="bi bi-speedometer2"></i> Admin Panel
+                    </h5>
+                    <hr>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'admin_dashboard:punishment_list' %}">
+                            <i class="bi bi-exclamation-triangle"></i> Punishments
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 main-content" style="margin-top: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-{% if object %}pencil{% else %}plus-circle{% endif %}"></i> 
+                    {% if object %}Edit{% else %}Create{% endif %} Punishment
+                </h2>
+                <a href="{% url 'admin_dashboard:punishment_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Punishment Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.user.id_for_label }}" class="form-label">Player</label>
+                                {{ form.user }}
+                                {% if form.user.errors %}
+                                    <div class="text-danger small">{{ form.user.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.type.id_for_label }}" class="form-label">Type</label>
+                                {{ form.type }}
+                                {% if form.type.errors %}
+                                    <div class="text-danger small">{{ form.type.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.severity.id_for_label }}" class="form-label">Severity</label>
+                                {{ form.severity }}
+                                {% if form.severity.errors %}
+                                    <div class="text-danger small">{{ form.severity.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.exp_penalty.id_for_label }}" class="form-label">EXP Penalty</label>
+                                {{ form.exp_penalty }}
+                                {% if form.exp_penalty.errors %}
+                                    <div class="text-danger small">{{ form.exp_penalty.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">EXP yang akan dikurangi dari player</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.status_effect.id_for_label }}" class="form-label">Status Effect (Optional)</label>
+                                {{ form.status_effect }}
+                                {% if form.status_effect.errors %}
+                                    <div class="text-danger small">{{ form.status_effect.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Status effect yang akan diterapkan</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.duration_days.id_for_label }}" class="form-label">Duration (Days)</label>
+                                {{ form.duration_days }}
+                                {% if form.duration_days.errors %}
+                                    <div class="text-danger small">{{ form.duration_days.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Durasi status effect (0 = permanent)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.evidence_json.id_for_label }}" class="form-label">Evidence (JSON - Optional)</label>
+                            {{ form.evidence_json }}
+                            {% if form.evidence_json.errors %}
+                                <div class="text-danger small">{{ form.evidence_json.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">JSON format: {"key": "value"} atau kosongkan jika tidak ada</div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            <strong>Warning:</strong> Punishment akan langsung diterapkan saat dibuat:
+                            <ul class="mb-0 mt-2">
+                                <li>EXP penalty akan langsung dikurangi dari player</li>
+                                <li>Status effect akan langsung diterapkan jika dipilih</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'admin_dashboard:punishment_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-check-circle"></i> {% if object %}Update{% else %}Create{% endif %} Punishment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+

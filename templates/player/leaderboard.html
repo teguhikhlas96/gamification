@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rank-badge {
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: bold;
+    }
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #808080); color: #000; }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
+    .current-user-row {
+        background-color: #e7f3ff !important;
+        border-left: 4px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5">
+                <i class="bi bi-trophy-fill"></i> Leaderboard
+            </h1>
+            {% if user_rank %}
+                <p class="text-muted">Your Rank: <strong>#{{ user_rank }}</strong></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top 3 Players -->
+    {% if top_players|length >= 3 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 3 Players</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <!-- 2nd Place -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-secondary">
+                                    <div class="card-body">
+                                        <div class="rank-badge rank-2 mx-auto mb-2">2</div>
+                                        <h5>{{ top_players.1.username }}</h5>
+                                        <p class="text-muted mb-1">Level {{ top_players.1.current_level }}</p>
+                                        <p class="mb-0"><strong>{{ top_players.1.total_exp }}</strong> EXP</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 1st Place -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-warning shadow-lg">
+                                    <div class="card-body">
+                                        <div class="rank-badge rank-1 mx-auto mb-2">1</div>
+                                        <h4>{{ top_players.0.username }}</h4>
+                                        <p class="text-muted mb-1">Level {{ top_players.0.current_level }}</p>
+                                        <p class="mb-0"><strong>{{ top_players.0.total_exp }}</strong> EXP</p>
+                                        <i class="bi bi-trophy-fill text-warning" style="font-size: 2rem;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 3rd Place -->
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-secondary">
+                                    <div class="card-body">
+                                        <div class="rank-badge rank-3 mx-auto mb-2">3</div>
+                                        <h5>{{ top_players.2.username }}</h5>
+                                        <p class="text-muted mb-1">Level {{ top_players.2.current_level }}</p>
+                                        <p class="mb-0"><strong>{{ top_players.2.total_exp }}</strong> EXP</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Full Leaderboard -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-list-ol"></i> Full Leaderboard</h5>
+                </div>
+                <div class="card-body">
+                    {% if players %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Player</th>
+                                        <th>Level</th>
+                                        <th>Total EXP</th>
+                                        <th>Current EXP</th>
+                                        <th>Honor Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-table">
+                                    {% for player in players %}
+                                        <tr class="{% if player.id == current_user.id %}current-user-row{% endif %}">
+                                            <td>
+                                                {% if forloop.counter <= 3 %}
+                                                    <span class="rank-badge rank-{{ forloop.counter }}">{{ forloop.counter }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">#{{ forloop.counter }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong>{{ player.username }}</strong>
+                                                {% if player.id == current_user.id %}
+                                                    <span class="badge bg-primary">You</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">Level {{ player.current_level }}</span>
+                                            </td>
+                                            <td><strong>{{ player.total_exp }}</strong></td>
+                                            <td>{{ player.current_exp }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ player.honor_points|yesno:'success,warning,danger' }}">
+                                                    {{ player.honor_points }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No players found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Submission Status - ClassCraft{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header"><h5>Submission Status: {{ submission.sidequest.title }}</h5></div>
+        <div class="card-body">
+            <p><strong>Submitted:</strong> {{ submission.submitted_at|date:"M d, Y H:i" }}</p>
+            <p><strong>File:</strong> <a href="{{ submission.submitted_file.url }}">{{ submission.submitted_file.name }}</a></p>
+            <p><strong>Grade:</strong> {% if submission.grade %}{{ submission.grade }}{% else %}Not graded yet{% endif %}</p>
+            <p><strong>EXP Earned:</strong> {{ submission.exp_earned }} EXP</p>
+            {% if submission.feedback %}<p><strong>Feedback:</strong> {{ submission.feedback }}</p>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

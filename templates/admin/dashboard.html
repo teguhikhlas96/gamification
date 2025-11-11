@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - ClassCraft{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        min-height: calc(100vh - 56px);
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+        color: #495057;
+        padding: 0.75rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem 0;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .sidebar .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="margin-top: -1.5rem;">
+    <div class="row g-0">
+        <!-- Sidebar Navigation -->
+        <nav class="col-md-3 col-lg-2 sidebar">
+            <div class="position-sticky pt-3">
+                <div class="mb-4">
+                    <h5 class="text-center">
+                        <i class="bi bi-speedometer2"></i> Admin Panel
+                    </h5>
+                    <hr>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'admin_dashboard:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-people"></i> Players
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:dungeon_list' %}">
+                            <i class="bi bi-door-closed"></i> Dungeons
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:sidequest_list' %}">
+                            <i class="bi bi-list-task"></i> Sidequests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:boss_list' %}">
+                            <i class="bi bi-shield-exclamation"></i> Bosses
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-trophy"></i> Achievements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:punishment_list' %}">
+                            <i class="bi bi-exclamation-triangle"></i> Punishments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin_dashboard:analytics_dashboard' %}">
+                            <i class="bi bi-graph-up"></i> Analytics & Reports
+                        </a>
+                    </li>
+                    <li class="nav-item mt-3">
+                        <a class="nav-link" href="/admin/">
+                            <i class="bi bi-gear"></i> Django Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 main-content" style="margin-top: 1.5rem;">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+                <span class="badge bg-danger fs-6">Admin</span>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card text-white bg-primary h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-white-50">Total Players</h6>
+                                    <h2 class="mb-0">{{ total_players }}</h2>
+                                </div>
+                                <i class="bi bi-people fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card text-white bg-success h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-white-50">Active Dungeons</h6>
+                                    <h2 class="mb-0">{{ active_dungeons }}</h2>
+                                </div>
+                                <i class="bi bi-door-closed fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card text-white bg-warning h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-white-50">Pending Sidequests</h6>
+                                    <h2 class="mb-0">{{ pending_sidequests }}</h2>
+                                </div>
+                                <i class="bi bi-list-task fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card stat-card text-white bg-info h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-white-50">Total Users</h6>
+                                    <h2 class="mb-0">{{ total_users }}</h2>
+                                </div>
+                                <i class="bi bi-person-badge fs-1 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2 d-md-flex">
+                                <a href="{% url 'admin_dashboard:dungeon_create' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Create New Dungeon
+                                </a>
+                                <a href="{% url 'admin_dashboard:sidequest_create' %}" class="btn btn-success">
+                                    <i class="bi bi-plus-circle"></i> Create Sidequest
+                                </a>
+                                <a href="#" class="btn btn-info">
+                                    <i class="bi bi-trophy"></i> View Leaderboard
+                                </a>
+                                <a href="/admin/" class="btn btn-secondary">
+                                    <i class="bi bi-gear"></i> Django Admin Panel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent EXP Activities -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent EXP Activities</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_exp_activities %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Activity Type</th>
+                                                <th>EXP Earned</th>
+                                                <th>Description</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for activity in recent_exp_activities %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ activity.user.username }}</strong>
+                                                    {% if activity.user.is_admin %}
+                                                        <span class="badge bg-danger">Admin</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">Player</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary">
+                                                        {{ activity.get_activity_type_display }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="text-success fw-bold">
+                                                        +{{ activity.exp_earned }} EXP
+                                                    </span>
+                                                </td>
+                                                <td>{{ activity.description|truncatewords:10 }}</td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        {{ activity.created_at|date:"M d, Y H:i" }}
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No EXP activities recorded yet.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Card -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-gradient bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-circle"></i> Welcome, {{ user.get_full_name|default:user.username }}!
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                You are logged in as an <strong>Admin</strong>. You have access to all administrative features 
+                                to manage players, dungeons, sidequests, and more.
+                            </p>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h6>Your Profile:</h6>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            <strong>Username:</strong> {{ user.username }}
+                                        </li>
+                                        <li class="list-group-item">
+                                            <strong>Email:</strong> {{ user.email|default:"Not set" }}
+                                        </li>
+                                        <li class="list-group-item">
+                                            <strong>Role:</strong> 
+                                            <span class="badge bg-danger">{{ user.get_role_display }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Your Stats:</h6>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            <strong>Level:</strong> {{ user.current_level }}
+                                        </li>
+                                        <li class="list-group-item">
+                                            <strong>Experience:</strong> {{ user.current_exp }} / {{ user.total_exp }} total
+                                        </li>
+                                        <li class="list-group-item">
+                                            <strong>Honor Points:</strong> {{ user.honor_points }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
