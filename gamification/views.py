@@ -8,6 +8,7 @@ from datetime import timedelta
 from accounts.models import User
 from core.models import ExpLog, Level, Punishment, StatusEffect, Dungeon, Attendance, SidequestSubmission, Boss
 from core.services import check_honor_privileges
+from core.services import PLAGIARISM_RULES, CHEATING_RULES, ABSENCE_RULES
 
 
 @login_required
@@ -70,24 +71,32 @@ def player_dashboard(request):
     
     # Stats for charts
     # EXP growth (last 30 days)
-    thirty_days_ago = timezone.now() - timedelta(days=30)
-    exp_growth_data = (
+    # EXP growth (last 30 days) - gunakan hanya EXP positif (earned) agar tidak ter-cancel oleh EXP negatif
+    today = timezone.localdate()
+    start_date = today - timedelta(days=29)  # 30 hari termasuk hari ini
+
+    raw_growth = (
         ExpLog.objects.filter(
             user=user,
-            created_at__gte=thirty_days_ago
+            created_at__date__gte=start_date,
+            exp_earned__gt=0  # hanya exp positif
         )
         .annotate(day=TruncDate('created_at'))
         .values('day')
         .annotate(total_exp=Sum('exp_earned'))
         .order_by('day')
     )
-    
-    # Format untuk Chart.js
+
+    # Buat peta day -> total_exp dan isi 0 untuk hari tanpa data
+    day_to_total = {str(item['day']): (item['total_exp'] or 0) for item in raw_growth}
+
     exp_growth_chart_data = []
-    for item in exp_growth_data:
+    for i in range(30):
+        d = start_date + timedelta(days=i)
+        key = d.strftime('%Y-%m-%d')
         exp_growth_chart_data.append({
-            'day': item['day'].strftime('%Y-%m-%d') if hasattr(item['day'], 'strftime') else str(item['day']),
-            'total_exp': item['total_exp'] or 0
+            'day': key,
+            'total_exp': day_to_total.get(key, 0)
         })
     
     # Activity distribution
@@ -355,3 +364,94 @@ def ajax_recent_activities(request):
     return JsonResponse({
         'activities': activities_data,
     })
+
+
+# Detail pages for dashboard cards
+@login_required
+def exp_summary(request):
+    if request.user.is_admin():
+        return redirect('admin_dashboard:dashboard')
+    
+    user = request.user
+    logs = ExpLog.objects.filter(user=user, exp_earned__gt=0).order_by('-created_at')
+    total_earned = logs.aggregate(Sum('exp_earned'))['exp_earned__sum'] or 0
+    by_activity = logs.values('activity_type').annotate(total=Sum('exp_earned'), count=Count('id')).order_by('-total')
+    levels = Level.objects.all().order_by('level')
+    
+    context = {
+        'user': user,
+        'total_earned': total_earned,
+        'by_activity': list(by_activity),
+        'logs': logs[:100],
+        'levels': levels,
+    }
+    return render(request, 'player/exp_summary.html', context)
+
+
+@login_required
+def exp_lost(request):
+    if request.user.is_admin():
+        return redirect('admin_dashboard:dashboard')
+    
+    user = request.user
+    logs = ExpLog.objects.filter(user=user, exp_earned__lt=0).order_by('-created_at')
+    total_lost = abs(logs.aggregate(Sum('exp_earned'))['exp_earned__sum'] or 0)
+    
+    context = {
+        'user': user,
+        'total_lost': total_lost,
+        'logs': logs[:100],
+    }
+    return render(request, 'player/exp_lost.html', context)
+
+
+@login_required
+def honor_history(request):
+    if request.user.is_admin():
+        return redirect('admin_dashboard:dashboard')
+    
+    user = request.user
+    level_up_logs = ExpLog.objects.filter(user=user, activity_type='bonus', description__icontains='Level Up').order_by('-created_at')
+    punishments = Punishment.objects.filter(user=user).order_by('-created_at')
+    inferred = []
+    for p in punishments:
+        honor_change = 0
+        if p.type == 'plagiarism':
+            rules = PLAGIARISM_RULES.get(p.severity, {})
+            honor_change = -int(rules.get('honor_loss', 0))
+        elif p.type == 'cheating':
+            boss_type = (p.evidence or {}).get('boss_type', 'mini_boss')
+            rules = CHEATING_RULES.get(boss_type, {})
+            honor_change = -int(rules.get('honor_loss', 0))
+        elif p.type == 'absence':
+            honor_change = -int(ABSENCE_RULES.get('honor_loss', 0))
+        inferred.append({'punishment': p, 'honor_change': honor_change})
+    
+    context = {
+        'user': user,
+        'level_up_logs': level_up_logs[:50],
+        'punishments_with_honor': inferred[:100],
+        'current_honor': user.honor_points,
+    }
+    return render(request, 'player/honor_history.html', context)
+
+
+@login_required
+def recent_activities(request):
+    if request.user.is_admin():
+        return redirect('admin_dashboard:dashboard')
+    
+    user = request.user
+    try:
+        limit = int(request.GET.get('limit', '10'))
+        limit = max(1, min(100, limit))
+    except ValueError:
+        limit = 10
+    logs = ExpLog.objects.filter(user=user).order_by('-created_at')[:limit]
+    
+    context = {
+        'user': user,
+        'logs': logs,
+        'limit': limit,
+    }
+    return render(request, 'player/recent_activities.html', context)

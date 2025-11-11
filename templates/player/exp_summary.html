@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}EXP Summary{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-3"><i class="bi bi-star-fill text-warning"></i> EXP Summary</h2>
+    <div class="mb-4">
+        <span class="badge bg-primary">Total Earned: {{ total_earned }}</span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>By Activity Type</strong></div>
+                <div class="card-body">
+                    {% if by_activity %}
+                    <ul class="list-group">
+                        {% for item in by_activity %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ item.activity_type|title }}</span>
+                            <span class="badge bg-success">+{{ item.total }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info mb-0">No EXP earned yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Level Thresholds</strong></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead><tr><th>Level</th><th>EXP Required (Total)</th></tr></thead>
+                            <tbody>
+                                {% for lvl in levels %}
+                                <tr {% if lvl.level == user.current_level %}class="table-primary"{% endif %}>
+                                    <td>Level {{ lvl.level }}</td>
+                                    <td>{{ lvl.exp_required }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><strong>Recent EXP Gains</strong></div>
+        <div class="card-body">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead><tr><th>Date</th><th>Activity</th><th>Description</th><th class="text-end">EXP</th></tr></thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ log.get_activity_type_display }}</td>
+                            <td>{{ log.description }}</td>
+                            <td class="text-end text-success">+{{ log.exp_earned }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">No EXP logs found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

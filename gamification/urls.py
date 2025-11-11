@@ -20,5 +20,10 @@ urlpatterns = [
     # Dungeon URLs (Player)
     path('dungeons/', core_views.player_dungeon_list, name='dungeon_list'),
     path('dungeons/<int:dungeon_pk>/', core_views.player_dungeon_detail, name='dungeon_detail'),
+    # Dashboard card details (Player)
+    path('exp-summary/', views.exp_summary, name='exp_summary'),
+    path('exp-lost/', views.exp_lost, name='exp_lost'),
+    path('honor-history/', views.honor_history, name='honor_history'),
+    path('recent-activities/', views.recent_activities, name='recent_activities'),
 ]
 

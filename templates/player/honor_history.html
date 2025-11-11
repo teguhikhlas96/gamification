@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Honor History{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-3"><i class="bi bi-shield-check text-info"></i> Honor History</h2>
+    <div class="mb-4">
+        <span class="badge bg-info">Current Honor: {{ current_honor }}</span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Level Up Bonuses</strong></div>
+                <div class="card-body">
+                    {% if level_up_logs %}
+                    <ul class="list-group">
+                        {% for log in level_up_logs %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ log.created_at|date:"Y-m-d H:i" }} — {{ log.description }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info mb-0">No level-up honor bonuses yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header"><strong>Punishments (Honor Impact)</strong></div>
+                <div class="card-body">
+                    {% if punishments_with_honor %}
+                    <ul class="list-group">
+                        {% for item in punishments_with_honor %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ item.punishment.created_at|date:"Y-m-d H:i" }} — {{ item.punishment.get_type_display }} ({{ item.punishment.get_severity_display }})</span>
+                            {% if item.honor_change %}
+                            <span class="badge bg-danger">{{ item.honor_change }}</span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-info mb-0">No punishments recorded.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
